@@ -1,0 +1,7 @@
+[package]
+name = "aitios-geom"
+version = "0.1.0"
+authors = ["krachzack <hello@phstadler.com>"]
+
+[dependencies]
+cgmath = "0.16"
