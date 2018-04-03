@@ -104,7 +104,7 @@ impl Aabb {
     ///
     /// The line is specified with the given origin and direction.
     ///
-    /// If the ray does not intersect the aabb, None is returned.
+    /// If the line does not intersect the aabb, None is returned.
     ///
     /// See: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
     fn line_intersection_min_max_parameters(&self, line_origin: Vector3<f32>, line_dir: Vector3<f32>) -> Option<(f32, f32)> {

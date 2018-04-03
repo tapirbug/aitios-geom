@@ -85,6 +85,8 @@ mod test {
 
         let triangles : Vec<_> = split_at_edge_midpoints(&tri).collect();
 
+        assert_eq!(triangles.len(), 4);
+
         assert!(
             triangles.iter()
                 .any(|t|

@@ -237,9 +237,15 @@ mod test {
     #[test]
     fn test_area() {
         let tri = TupleTriangle::new(Vec3::new(0.0, 0.0, 0.0), Vec3::new(10.0, 0.0, 0.0), Vec3::new(10.0, 10.0, 0.0));
-        tri.positions();
         let area = tri.area();
         assert_eq!(50.0, area);
+    }
+
+    #[test]
+    fn test_area_colinear() {
+        let tri = TupleTriangle::new(Vec3::new(0.0, 0.0, 0.0), Vec3::new(10.0, 0.0, 0.0), Vec3::new(100.0, 0.0, 0.0));
+        let area = tri.area();
+        assert_eq!(0.0, area);
     }
 
     #[test]
