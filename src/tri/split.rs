@@ -5,20 +5,25 @@ use vtx::Position;
 /// Takes a triangle and returns four newly created triangles that are
 /// the resulting of splitting the input triangle into four by introducing
 /// new vertices at edge midpoints
-pub fn split_at_edge_midpoints<T, V>(tri : &T) -> TriangleSplit<T>
+pub fn split_at_edge_midpoints<T, V>(tri : &T) -> Split<T>
     where T : FromVertices<Vertex = V> + InterpolateVertex<Vertex = V> + Sized,
         V : Position + Clone
 {
-    TriangleSplit::new(tri)
+    Split::new(tri)
 }
 
-pub struct TriangleSplit<'a, T : 'a + InterpolateVertex> {
+/// Iterates over the resulting triangles when a triangle was split
+/// at its edge midpoints.
+///
+/// Call [split_at_edge_midpoints](fn.split_at_edge_midpoints.html) to
+/// obtain an iterator over sub-triangles.
+pub struct Split<'a, T : 'a + InterpolateVertex> {
     next_idx: usize,
     src_tri: &'a T,
     mids: [T::Vertex; 3]
 }
 
-impl<'a, T, V> TriangleSplit<'a, T>
+impl<'a, T, V> Split<'a, T>
     where T : InterpolateVertex<Vertex = V> + Sized,
         V : Position + Clone
 {
@@ -31,7 +36,7 @@ impl<'a, T, V> TriangleSplit<'a, T>
 
         let src_tri = tri;
 
-        TriangleSplit {
+        Split {
             next_idx: 0,
             src_tri,
             mids
@@ -39,7 +44,7 @@ impl<'a, T, V> TriangleSplit<'a, T>
     }
 }
 
-impl<'a, T, V> Iterator for TriangleSplit<'a, T>
+impl<'a, T, V> Iterator for Split<'a, T>
     where T : InterpolateVertex<Vertex = V> + FromVertices<Vertex = V> + Sized,
         V : Position + Clone
 {

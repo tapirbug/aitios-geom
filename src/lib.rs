@@ -39,6 +39,9 @@
 #[cfg_attr(test, macro_use)]
 extern crate cgmath;
 
+// Export modules as public so qualified imports are possible
+// Example:
+// use aitios_geom::tri::{Triangle, Iter};
 pub mod tri;
 pub mod linalg;
 pub mod vtx;
@@ -46,12 +49,27 @@ pub mod aabb;
 pub mod bounds;
 pub mod intersect;
 
+// Make qualified imports an opt-in by bringing the most important
+// types into top-level position so you can do
+// Example:
+// use aitios_geom::Triangle;
 pub use linalg::*;
-pub use vtx::*;
-pub use tri::*;
-pub use aabb::*;
-pub use intersect::*;
-pub use bounds::*;
+pub use vtx::{
+    Vertex,
+    Position,
+    Normal,
+    Texcoords
+};
+pub use tri::{
+    Triangle,
+    TupleTriangle,
+    Interpolation,
+    InterpolateVertex,
+    TangentSpace
+};
+pub use aabb::Aabb;
+pub use intersect::IntersectRay;
+pub use bounds::Bounds;
 
 pub mod prelude {
     pub use bounds::Bounds;

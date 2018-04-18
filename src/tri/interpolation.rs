@@ -55,6 +55,13 @@ pub trait Interpolation : Triangle {
     }
 }
 
+// REVIEW could move this into main Interpolation type but with
+// fn interpolate… -> Self::Vertex
+// where Self : FromVertices,
+//       Self::Vertex : Position + Clone + Mul<f32, Output = V> + Add<V, Output = V>
+// would save the need for a InterpolateVertex type
+// on the other hand InterpolateVertex is useful for trait bounds and should at least
+// remain as a tag trait with no methods
 pub trait InterpolateVertex : Interpolation {
     fn interpolate_vertex_bary(&self, bary: [f32; 3]) -> Self::Vertex;
 

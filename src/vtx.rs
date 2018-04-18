@@ -86,26 +86,7 @@ impl<'a> Add for &'a Vertex {
     }
 }
 
-impl<'a> From<VertexRef<'a>> for Vertex {
-    fn from(from: VertexRef<'a>) -> Self {
-        Vertex {
-            position: Vec3::new(from.position[0], from.position[1], from.position[2]),
-            normal: Vec3::new(from.normal[0], from.normal[1], from.normal[2]),
-            texcoords: Vec2::new(from.texcoords[0], from.texcoords[1])
-        }
-    }
-}
-
-impl<'a, 'b> From<&'b VertexRef<'a>> for Vertex {
-    fn from(from: &'b VertexRef<'a>) -> Self {
-        Vertex {
-            position: Vec3::new(from.position[0], from.position[1], from.position[2]),
-            normal: Vec3::new(from.normal[0], from.normal[1], from.normal[2]),
-            texcoords: Vec2::new(from.texcoords[0], from.texcoords[1])
-        }
-    }
-}
-
+/*
 /// A vertex that references into an array
 ///
 /// FIXME it turned out that VertexRef (48 bytes) is larger than Vertex (32 bytes)
@@ -136,7 +117,27 @@ impl<'a> Texcoords for VertexRef<'a> {
     }
 }
 
-/*#[cfg(test)]
+impl<'a> From<VertexRef<'a>> for Vertex {
+    fn from(from: VertexRef<'a>) -> Self {
+        Vertex {
+            position: Vec3::new(from.position[0], from.position[1], from.position[2]),
+            normal: Vec3::new(from.normal[0], from.normal[1], from.normal[2]),
+            texcoords: Vec2::new(from.texcoords[0], from.texcoords[1])
+        }
+    }
+}
+
+impl<'a, 'b> From<&'b VertexRef<'a>> for Vertex {
+    fn from(from: &'b VertexRef<'a>) -> Self {
+        Vertex {
+            position: Vec3::new(from.position[0], from.position[1], from.position[2]),
+            normal: Vec3::new(from.normal[0], from.normal[1], from.normal[2]),
+            texcoords: Vec2::new(from.texcoords[0], from.texcoords[1])
+        }
+    }
+}
+
+#[cfg(test)]
 mod test {
     use super::*;
     use std::mem;
