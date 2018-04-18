@@ -12,6 +12,30 @@ pub struct Aabb {
 }
 
 impl Aabb {
+    /// Creates the smallest AABB encompassing all of the points
+    /// in the given iterator over points or point references.
+    ///
+    /// If the iterator only has a single point, the AABB will have
+    /// min and max at that point. An empty iterator yields `Aabb::empty()`.
+    ///
+    /// ```
+    /// use aitios_geom::{Aabb, Vec3};
+    ///
+    /// let p1 = Vec3::new(-0.5, -0.5, 1.0);
+    /// let p2 = Vec3::new(0.5, -0.5, 1.0);
+    /// let p3 = Vec3::new(0.0, 0.5, -1.0);
+    ///
+    /// // Consumes the points in the vector
+    /// let aabb = Aabb::from_points(vec![p1, p2, p3]);
+    ///
+    /// // All points are contained
+    /// assert!(aabb.is_point_inside(p1) && aabb.is_point_inside(p2) && aabb.is_point_inside(p3));
+    ///
+    /// // Any kind of reference is okay too
+    /// let aabb = Aabb::from_points(vec![p1, p2, p3].iter());
+    /// let aabb = Aabb::from_points(vec![&p1, &p2, &p3]);
+    /// let aabb = Aabb::from_points(vec![Box::new(p1), Box::new(p2), Box::new(p3)]);
+    /// ```
     pub fn from_points<I, P>(iter: I) -> Self
         where I : IntoIterator<Item=P>,
             P : Borrow<Vec3>
