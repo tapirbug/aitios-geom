@@ -63,6 +63,7 @@ pub use vtx::{
 pub use tri::{
     Triangle,
     TupleTriangle,
+    FromVertices,
     Interpolation,
     InterpolateVertex,
     TangentSpace
