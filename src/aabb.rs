@@ -121,7 +121,7 @@ impl Aabb {
             0.0
         } else {
             let dims = self.max - self.min;
-            (dims.x * dims.y * dims.z).max(0.0)
+            dims.x * dims.y * dims.z
         }
     }
 
@@ -381,15 +381,11 @@ mod test {
 
     #[test]
     fn aabb_from_points_empty() {
-        let aabb = Aabb::from_points(iter::empty());
+        let aabb = Aabb::from_points(iter::empty::<Vec3>());
+        assert!(aabb.is_empty());
 
-        assert_eq!(aabb.min.x, INFINITY, "Expected infinite AABB from empty points");
-        assert_eq!(aabb.min.y, INFINITY, "Expected infinite AABB from empty points");
-        assert_eq!(aabb.min.z, INFINITY, "Expected infinite AABB from empty points");
-
-        assert_eq!(aabb.max.x, NEG_INFINITY, "Expected infinite AABB from empty points");
-        assert_eq!(aabb.max.y, NEG_INFINITY, "Expected infinite AABB from empty points");
-        assert_eq!(aabb.max.z, NEG_INFINITY, "Expected infinite AABB from empty points");
+        let aabb = Aabb::from_points(iter::empty::<&Vec3>());
+        assert!(aabb.is_empty());
     }
 
     #[test]
@@ -399,6 +395,7 @@ mod test {
 
         assert_eq!(aabb.min, point, "Built AABB from single point {:?} and expected min to be equal, but was {:?}", point, aabb.min);
         assert_eq!(aabb.max, point, "Built AABB from single point {:?} and expected max to be equal, but was {:?}", point, aabb.max);
+        assert!(aabb.is_empty());
     }
 
     #[test]
