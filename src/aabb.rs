@@ -501,6 +501,23 @@ mod test {
         assert!(!aabb.is_aabb_inside(&other_aabb));
     }
 
+    /// Tests the special case with only three points that lie on the same axis.
+    /// The aabb should still contain all points, despite having zero volume
+    #[test]
+    fn axis_aligned_triangle() {
+        let p1 = Vec3::new(-0.5, -0.5, 1.0);
+        let p2 = Vec3::new(0.5, -0.5, 1.0);
+        let p3 = Vec3::new(0.0, 0.5, 1.0);
+
+        let aabb = Aabb::from_points([p1, p2, p3].iter());
+
+        assert!(aabb.is_point_inside(p1));
+        assert!(aabb.is_point_inside(p2));
+        assert!(aabb.is_point_inside(p3));
+        assert!(aabb.is_empty());
+        assert_eq!(aabb.volume(), 0.0);
+    }
+
     #[test]
     fn aabb_line_intersection() {
         // Given one aabb around the origin
