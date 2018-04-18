@@ -1,4 +1,4 @@
-use super::iter::TriangleVertexIter;
+use super::iter::Iter;
 
 use ::linalg::Vec3;
 use ::vtx::Position;
@@ -143,8 +143,8 @@ pub trait Triangle {
             .all(|v| center.distance2(v.position()) < radius_sqr)
     }
 
-    fn iter<'a>(&self) -> TriangleVertexIter<Self> {
-        TriangleVertexIter::new(self)
+    fn iter(&self) -> Iter<Self> {
+        Iter::new(self)
     }
 
     /// Returns the minimum bounding sphere center and squared radius

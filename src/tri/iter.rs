@@ -2,18 +2,18 @@ use super::tri::Triangle;
 
 /// Iterates over immutable references to triangle vertices.
 #[derive(Debug, Copy, Clone)]
-pub struct TriangleVertexIter<'a, T : Triangle + ?Sized + 'a> {
+pub struct Iter<'a, T : Triangle + ?Sized + 'a> {
     tri: &'a T,
     next_idx: usize
 }
 
-impl<'a, T : Triangle + ?Sized> TriangleVertexIter<'a, T> {
+impl<'a, T : Triangle + ?Sized> Iter<'a, T> {
     pub fn new(triangle: &'a T) -> Self {
-        TriangleVertexIter { tri: triangle, next_idx: 0 }
+        Iter { tri: triangle, next_idx: 0 }
     }
 }
 
-impl<'a, T : Triangle + 'a> Iterator for TriangleVertexIter<'a, T> {
+impl<'a, T : Triangle + 'a> Iterator for Iter<'a, T> {
     type Item = &'a T::Vertex;
 
     fn next(&mut self) -> Option<Self::Item> {
