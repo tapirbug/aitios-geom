@@ -1,7 +1,7 @@
 use super::iter::Iter;
 
-use ::linalg::Vec3;
-use ::vtx::Position;
+use linalg::{Vec3, Vec2};
+use vtx::{Position, Normal, Texcoords};
 use ::cgmath::prelude::*;
 use std::f32::EPSILON;
 
@@ -93,14 +93,38 @@ pub trait Triangle {
 
     fn vertices(&self) -> (&Self::Vertex, &Self::Vertex, &Self::Vertex);
 
+    #[inline]
     fn to_array(&self) -> [&Self::Vertex; 3] {
         let (a, b, c) = self.vertices();
         [a, b, c]
     }
 
+    #[inline]
     fn positions(&self) -> (Vec3, Vec3, Vec3) {
         let (a, b, c) = self.vertices();
         (a.position(), b.position(), c.position())
+    }
+
+    #[inline]
+    fn normals(&self) -> (Vec3, Vec3, Vec3)
+        where Self::Vertex : Normal
+    {
+        let (a, b, c) = self.vertices();
+        (a.normal(), b.normal(), c.normal())
+    }
+
+    #[inline]
+    fn texcoords(&self) -> (Vec2, Vec2, Vec2)
+        where Self::Vertex : Texcoords
+    {
+        let (a, b, c) = self.vertices();
+        (a.texcoords(), b.texcoords(), c.texcoords())
+    }
+
+    /// Returns true if all three points lie on the same line
+    fn is_colinear(&self) -> bool {
+        let (a, b, c) = self.positions();
+        (b - a).cross(c - a).is_zero()
     }
 
     /// ||(V1 −V0)×(V2 −V0)||/2
@@ -152,7 +176,6 @@ pub trait Triangle {
     ///
     /// See: http://realtimecollisiondetection.net/blog/?p=20
     fn minimum_bounding_sphere_sqr(&self) -> (Vec3, f32) {
-        //void MinimumBoundingCircle(Circle &circle, Point a, Point b, Point c) {
         let (a, b, c) = self.positions();
         let dot_abab = (b - a).dot(b - a);
         let dot_abac = (b - a).dot(c - a);
@@ -271,5 +294,14 @@ mod test {
         let (center, radius_sqr) = tri.minimum_bounding_sphere_sqr();
         assert_ulps_eq!(radius_sqr, 25.0);
         assert_ulps_eq!(origin_offset, center);
+    }
+
+    #[test]
+    fn colinearity() {
+        let vertex0 = origin_offset + Vec3::new(1.0, -4.0, 0.0);
+        let vertex1 = origin_offset + Vec3::new(2.0, -4.0, 0.0);
+        let vertex2 = origin_offset - Vec3::new(3.0, -4.0, 0.0);
+        let tri = TupleTriangle::new(vertex0, vertex1, vertex2);
+        assert!(tri.is_colinear(), "All three points lie on the same line but reported as not colinear.");
     }
 }

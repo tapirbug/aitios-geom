@@ -1,6 +1,6 @@
 use super::tri::Triangle;
 
-/// Iterates over immutable references to triangle vertices.
+/// Iterates over shared references to triangle vertices.
 #[derive(Debug, Copy, Clone)]
 pub struct Iter<'a, T : Triangle + ?Sized + 'a> {
     tri: &'a T,
@@ -16,6 +16,7 @@ impl<'a, T : Triangle + ?Sized> Iter<'a, T> {
 impl<'a, T : Triangle + 'a> Iterator for Iter<'a, T> {
     type Item = &'a T::Vertex;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         match self.tri.vertices() {
             (a, _, _) if self.next_idx == 0 => { self.next_idx += 1; Some(a) }
