@@ -298,9 +298,9 @@ mod test {
 
     #[test]
     fn colinearity() {
-        let vertex0 = origin_offset + Vec3::new(1.0, -4.0, 0.0);
-        let vertex1 = origin_offset + Vec3::new(2.0, -4.0, 0.0);
-        let vertex2 = origin_offset - Vec3::new(3.0, -4.0, 0.0);
+        let vertex0 = Vec3::new(1.0, -4.0, 0.0);
+        let vertex1 = Vec3::new(2.0, -4.0, 0.0);
+        let vertex2 = Vec3::new(3.0, -4.0, 0.0);
         let tri = TupleTriangle::new(vertex0, vertex1, vertex2);
         assert!(tri.is_colinear(), "All three points lie on the same line but reported as not colinear.");
     }

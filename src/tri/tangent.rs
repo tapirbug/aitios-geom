@@ -221,7 +221,7 @@ mod test {
         // cw (backside) on X/Y-Plane when looking in negative Z direction, normal should point in negative Z direction
         let tri = some_tri();
 
-        let (tangent, binormal, normal) = uv_space(tri);
+        let (tangent, binormal, normal) = texture_space(tri);
         assert_eq!(Vec3::new(-1.0, 0.0, 0.0), tangent, "Expected tangent to be in negative U direction in texture space, since it is flipped with respect to position space");
         assert_eq!(Vec3::new(0.0, 1.0, 0.0), binormal);
         assert_eq!(Vec3::new(0.0, 0.0, 1.0), normal);
