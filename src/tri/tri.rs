@@ -2,7 +2,7 @@ use super::iter::Iter;
 
 use linalg::{Vec3, Vec2};
 use vtx::{Position, Normal, Texcoords};
-use ::cgmath::prelude::*;
+use cgmath::prelude::*;
 use std::f32::EPSILON;
 
 /// Represents a triangle in three-dimensional space.
@@ -121,7 +121,7 @@ pub trait Triangle {
         (a.texcoords(), b.texcoords(), c.texcoords())
     }
 
-    /// Returns true if all three points lie on the same line
+    /// Returns true if all three vertices lie on the same line.
     fn is_colinear(&self) -> bool {
         let (a, b, c) = self.positions();
         (b - a).cross(c - a).is_zero()
@@ -303,5 +303,20 @@ mod test {
         let vertex2 = Vec3::new(3.0, -4.0, 0.0);
         let tri = TupleTriangle::new(vertex0, vertex1, vertex2);
         assert!(tri.is_colinear(), "All three points lie on the same line but reported as not colinear.");
+    }
+
+    /// Tests for colinearity with a triangle that is almost but not
+    /// quite colinear.
+    ///
+    /// One interior angle is apprixmately 179.8° making it almost a
+    /// line. See Wolfram Alpha for more details on the edge case triangle
+    /// http://www.wolframalpha.com/input/?i=Triangle+a%3D(1687.763,+928.7209)+b%3D(1687.7466,+928.7045)+c%3D(1687.7527,+928.71063)
+    #[test]
+    fn test_colinearity_edge_case() {
+        let vertex0 = Vec3::new(1687.763,  928.7209,  0.0);
+        let vertex1 = Vec3::new(1687.7466, 928.7045,  0.0);
+        let vertex2 = Vec3::new(1687.7527, 928.71063, 0.0);
+        let tri = TupleTriangle::new(vertex0, vertex1, vertex2);
+        assert!(tri.is_colinear(), "Almost colinear triangle should also report as colinear.");
     }
 }

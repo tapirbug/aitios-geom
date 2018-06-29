@@ -9,7 +9,8 @@ use prelude::*;
 /// * binormal,
 /// * normal.
 ///
-/// Implements some tangent space operations.
+/// Implements some tangent space operations such as conversions from tangent
+/// space to world space.
 pub trait TangentSpace {
     /// Calculates a tangent space based on vertex positions and returns it as three
     /// vectors that form an orthonormal basis. The first vector will be a tangent,
