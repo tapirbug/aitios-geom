@@ -2,27 +2,39 @@ use super::tri::Triangle;
 
 /// Iterates over shared references to triangle vertices.
 #[derive(Debug, Copy, Clone)]
-pub struct Iter<'a, T : Triangle + ?Sized + 'a> {
+pub struct Iter<'a, T: Triangle + ?Sized + 'a> {
     tri: &'a T,
-    next_idx: usize
+    next_idx: usize,
 }
 
-impl<'a, T : Triangle + ?Sized> Iter<'a, T> {
+impl<'a, T: Triangle + ?Sized> Iter<'a, T> {
     pub fn new(triangle: &'a T) -> Self {
-        Iter { tri: triangle, next_idx: 0 }
+        Iter {
+            tri: triangle,
+            next_idx: 0,
+        }
     }
 }
 
-impl<'a, T : Triangle + 'a> Iterator for Iter<'a, T> {
+impl<'a, T: Triangle + 'a> Iterator for Iter<'a, T> {
     type Item = &'a T::Vertex;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         match self.tri.vertices() {
-            (a, _, _) if self.next_idx == 0 => { self.next_idx += 1; Some(a) }
-            (_, b, _) if self.next_idx == 1 => { self.next_idx += 1; Some(b) }
-            (_, _, c) if self.next_idx == 2 => { self.next_idx += 1; Some(c) }
-            _ => None
+            (a, _, _) if self.next_idx == 0 => {
+                self.next_idx += 1;
+                Some(a)
+            }
+            (_, b, _) if self.next_idx == 1 => {
+                self.next_idx += 1;
+                Some(b)
+            }
+            (_, _, c) if self.next_idx == 2 => {
+                self.next_idx += 1;
+                Some(c)
+            }
+            _ => None,
         }
     }
 }
@@ -30,9 +42,9 @@ impl<'a, T : Triangle + 'a> Iterator for Iter<'a, T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use ::tri::TupleTriangle as Tri;
-    use ::tri::FromVertices;
-    use ::linalg::Vec3;
+    use linalg::Vec3;
+    use tri::FromVertices;
+    use tri::TupleTriangle as Tri;
 
     #[test]
     fn test_iter() {

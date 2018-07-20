@@ -1,7 +1,7 @@
 use super::Triangle;
 use linalg::{Mat3, Vec3};
-use vtx::Texcoords;
 use prelude::*;
+use vtx::Texcoords;
 
 /// Implementors of this trait either have defined or can calculate:
 ///
@@ -56,7 +56,8 @@ pub trait TangentSpace {
     /// in world space. If the given direction happens to be parallel to the normal, a zero vector is returned.
     fn project_onto_tangential_plane(&self, incoming_direction_world: Vec3) -> Vec3 {
         let world_to_tangent = self.world_to_tangent_matrix();
-        let tangent_to_world = world_to_tangent.invert()
+        let tangent_to_world = world_to_tangent
+            .invert()
             .expect("Expected tangent space matrix to be invertible");
 
         let tangent_space_direction = world_to_tangent * incoming_direction_world;
@@ -74,15 +75,42 @@ pub trait TangentSpace {
     }
 }
 
-/*/// Calculates a tangent space based on vertex positions and returns it as three
-/// vectors that form an orthonormal basis. The first vector will be a tangent,
-/// the second a binormal and the third the face normal.
-///
-/// Note that there are infinite possible tangent spaces, this implementation
-/// arbitrarily chooses to make the resulting tangent parallel to the edge C,
-/// that is from vertex 0 to vertex 1. The tangent space is not guaranteed to be
-/// aligned with texture space, which is normally a common way to align it.
-fn tangent_space_fast<T : Triangle>(tri: T) -> (Vec3, Vec3, Vec3) {
+impl<T> TangentSpace for T
+where
+    T: Triangle,
+{
+    /// Calculates a tangent space based on vertex positions and returns it as three
+    /// vectors that form an orthonormal basis. The first vector will be a tangent,
+    /// the second a binormal and the third the face normal.
+    ///
+    /// Note that there are infinite possible tangent spaces, this implementation
+    /// arbitrarily chooses to make the resulting tangent parallel to the edge C,
+    /// that is from vertex 0 to vertex 1. The tangent space is not guaranteed to be
+    /// aligned with texture space, which is normally a common way to align it.
+    ///
+    /// Use the `texture_space` function if the tangent space should be aligned with UV
+    /// space and the triangle has texture coordinates.
+    ///
+    /// # Panics
+    /// If a triangle is very close to being a line or a point (having almost zero area),
+    /// the algorithm cannot determine a geometric normal. Though there would be candidates
+    /// for a solution (any vector perpendicular to the line or any possible vector for a
+    /// triangle concentrated in a point), the implementation assumes this hints at an
+    /// implementation error of the calling algorithm and panics if debug assertions are
+    /// enabled. On release builds, the returned vectors have undefined value.
+    fn tangent_space(&self) -> (Vec3, Vec3, Vec3) {
+        tangent_space_fast(self)
+    }
+}
+
+/// Calculates a (tangent, binormal, normal) tuple that forms an orthonormal basis.
+/// * X is aligned with edge C (from vertex 0 to vertex 1),
+/// * Y is the cross product of X and Z,
+/// * Z is aligned with the geometric normal.
+fn tangent_space_fast<T>(tri: &T) -> (Vec3, Vec3, Vec3)
+where
+    T: Triangle,
+{
     let (a, b, c) = tri.positions();
 
     let a_to_b = b - a;
@@ -91,80 +119,31 @@ fn tangent_space_fast<T : Triangle>(tri: T) -> (Vec3, Vec3, Vec3) {
     let scaled_normal = a_to_b.cross(a_to_c);
 
     // If all three points are colinear, result is always zero vector: v.cross(v) = 0, v.cross(Vector3::zero()) = 0
-    assert!(!scaled_normal.is_zero(), "Face normal is undefined for triangle with zero area: [{:?}, {:?}, {:?}]", a, b, c);
+    debug_assert!(
+        !scaled_normal.is_zero(),
+        "Face normal is undefined for triangle with zero area: [{:?}, {:?}, {:?}]",
+        a,
+        b,
+        c
+    );
 
     let normal = scaled_normal.normalize();
     let tangent = a_to_b.normalize();
     let binormal = (tangent.cross(normal)).normalize();
 
     (tangent, binormal, normal)
-}*/
-impl<T : Triangle> TangentSpace for T {
-    /// Calculates a tangent space based on vertex positions and returns it as three
-    /// vectors that form an orthonormal basis. The first vector will be a tangent,
-    /// the second a binormal and the third the face normal.
-    ///
-    /// Note that there are infinite possible tangent spaces. The resulting tangent
-    /// is parallel to the edge C, that is from vertex 0 to vertex 1. The
-    /// tangent space is not guaranteed to be aligned with texture space, which is
-    /// normally a common way to align it.
-    fn tangent_space(&self) -> (Vec3, Vec3, Vec3) {
-        let (a, b, c) = self.positions();
-
-        let a_to_b = b - a;
-        let a_to_c = c - a;
-
-        let scaled_normal = a_to_b.cross(a_to_c);
-
-        // If all three points are colinear, result is always zero vector: v.cross(v) = 0, v.cross(Vector3::zero()) = 0
-        assert!(!scaled_normal.is_zero(), "Face normal is undefined for triangle with zero area: [{:?}, {:?}, {:?}]", a, b, c);
-
-        let normal = scaled_normal.normalize();
-        let tangent = a_to_b.normalize();
-        let binormal = (tangent.cross(normal)).normalize();
-
-        (tangent, binormal, normal)
-    }
 }
 
-/*use vtx::Texcoords;
-impl<T> TangentSpace for T
-    where T : Triangle,
-          T::Vertex : Texcoords
-{
-    /// This would (untested) be aligned to UV space in tangent/binormal direction
-    ///
-    fn tangent_space(&self) -> (Vec3, Vec3, Vec3) {
-        let (pos0, pos1, pos2) = self.positions();
-        let (tex0, tex1, tex2) = self.texcoords();
-
-        let delta_pos0 = pos1 - pos0;
-        let delta_pos1 = pos2 - pos0;
-
-        let delta_tex0 = tex1 - tex0;
-        let delta_tex1 = tex2 - tex0;
-
-        let r = (delta_tex0.x * delta_tex1.y - delta_tex0.y * delta_tex1.x).recip();
-        let tangent = r * (delta_pos0 * delta_tex1.y - delta_pos1 * delta_tex0.y);
-        let bitangent = r * (delta_pos1 * delta_tex0.x - delta_pos0 * delta_tex1.x);
-
-        (
-            tangent,
-            bitangent,
-            tangent.cross(bitangent)
-        )
-    }
-}*/
-
-/// Calculates an orhtonormal basis for a TBN matrix that is aligned with
+/// Calculates an orthonormal basis for a TBN matrix that is aligned with
 /// texture space, useful for normal mapping.
 ///
-/// The standard tangent_space in `TangentSpace` is arbitrarily aligned in contrast
+/// The standard `tangent_space` in `TangentSpace` is arbitrarily aligned in contrast
 /// to this function but does not require the definition of texture coordinates
-/// to do projections on the tangential plane.
+/// to do projections on the tangential plane. It is also slightly faster.
 pub fn texture_space<T>(tri: T) -> (Vec3, Vec3, Vec3)
-    where T : Triangle,
-          T::Vertex : Texcoords
+where
+    T: Triangle,
+    T::Vertex: Texcoords,
 {
     let (pos0, pos1, pos2) = tri.positions();
     let (tex0, tex1, tex2) = tri.texcoords();
@@ -183,17 +162,17 @@ pub fn texture_space<T>(tri: T) -> (Vec3, Vec3, Vec3)
     (
         tangent.normalize(),
         bitangent.normalize(),
-        normal.normalize()
+        normal.normalize(),
     )
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use tri::TupleTriangle as Tri;
-    use tri::FromVertices;
-    use vtx::Vertex;
     use linalg::{Vec2, Vec3};
+    use tri::FromVertices;
+    use tri::TupleTriangle as Tri;
+    use vtx::Vertex;
 
     /// Returns a triangle with vertices around the origin on the X/Y plane,
     /// stretched in Y direction, 2 in width, and 4 in height
@@ -202,18 +181,18 @@ mod test {
             Vertex {
                 position: Vec3::new(-1.0, -2.0, 0.0),
                 normal: Vec3::new(0.0, 0.0, 1.0),
-                texcoords: Vec2::new(1.0, 0.0) // bottom left is bottom right in UV space
+                texcoords: Vec2::new(1.0, 0.0), // bottom left is bottom right in UV space
             },
             Vertex {
                 position: Vec3::new(1.0, -2.0, 0.0),
                 normal: Vec3::new(0.0, 0.0, 1.0),
-                texcoords: Vec2::new(0.0, 0.0) // bottom right is left in UV space
+                texcoords: Vec2::new(0.0, 0.0), // bottom right is left in UV space
             },
             Vertex {
                 position: Vec3::new(0.0, 2.0, 0.0),
                 normal: Vec3::new(0.0, 0.0, 1.0),
-                texcoords: Vec2::new(0.5, 2.0) // middle top is still middle top
-            }
+                texcoords: Vec2::new(0.5, 2.0), // middle top is still middle top
+            },
         )
     }
 
@@ -231,11 +210,14 @@ mod test {
         let tri = Tri::new(
             Vec3::new(-1.0, 1.0, 0.0),
             Vec3::new(0.0, -1.0, 0.0),
-            Vec3::new(1.0, 1.0, 0.0)
+            Vec3::new(1.0, 1.0, 0.0),
         );
 
         assert_eq!(Vec3::new(0.0, 0.0, 1.0), tri.normal());
-        assert_eq!((Vec3::new(0.0, -1.0, 0.0) - Vec3::new(-1.0, 1.0, 0.0)).normalize(), tri.tangent());
+        assert_eq!(
+            (Vec3::new(0.0, -1.0, 0.0) - Vec3::new(-1.0, 1.0, 0.0)).normalize(),
+            tri.tangent()
+        );
         assert_eq!(tri.binormal().dot(tri.normal()), 0.0);
     }
 
@@ -245,7 +227,7 @@ mod test {
         let tri = Tri::new(
             Vec3::new(-1.0, 1.0, 0.0),
             Vec3::new(1.0, 1.0, 0.0),
-            Vec3::new(0.0, -1.0, 0.0)
+            Vec3::new(0.0, -1.0, 0.0),
         );
 
         let (tangent, binormal, normal) = tri.tangent_space();
@@ -257,11 +239,14 @@ mod test {
         let tri = Tri::new(
             Vec3::new(-1.0, 1.0, 0.0),
             Vec3::new(0.0, -1.0, 0.0),
-            Vec3::new(1.0, 1.0, 0.0)
+            Vec3::new(1.0, 1.0, 0.0),
         );
 
         assert_eq!(Vec3::new(0.0, 0.0, 1.0), tri.normal());
-        assert_eq!((Vec3::new(0.0, -1.0, 0.0) - Vec3::new(-1.0, 1.0, 0.0)).normalize(), tri.tangent());
+        assert_eq!(
+            (Vec3::new(0.0, -1.0, 0.0) - Vec3::new(-1.0, 1.0, 0.0)).normalize(),
+            tri.tangent()
+        );
         assert_eq!(tri.binormal().dot(tri.normal()), 0.0);
     }
 
@@ -271,7 +256,7 @@ mod test {
         let tri = Tri::new(
             Vec3::new(-1.0, 0.0, 1.0),
             Vec3::new(1.0, 0.0, 1.0),
-            Vec3::new(1.0, 0.0, 1.0)
+            Vec3::new(1.0, 0.0, 1.0),
         );
 
         tri.normal();
@@ -284,7 +269,7 @@ mod test {
         let floor_tri = Tri::new(
             Vec3::new(-1.0, 0.0, 1.0),
             Vec3::new(1.0, 0.0, 1.0),
-            Vec3::new(0.0, 0.0, -1.0)
+            Vec3::new(0.0, 0.0, -1.0),
         );
 
         let up_right_positive_z = Vec3::new(1.0, 1.0, 1.0).normalize();
@@ -302,16 +287,13 @@ mod test {
         let slope_tri = Tri::new(
             Vec3::new(0.0, 0.0, 1.0),
             Vec3::new(1.0, 1.0, 0.0),
-            Vec3::new(0.0, 0.0, -1.0)
+            Vec3::new(0.0, 0.0, -1.0),
         );
 
         let down = Vec3::new(0.0, -1.0, 0.0);
         let projected = slope_tri.project_onto_tangential_plane(down);
 
-        assert_eq!(
-            Vec3::new(-1.0, -1.0, 0.0).normalize(),
-            projected
-        );
+        assert_eq!(Vec3::new(-1.0, -1.0, 0.0).normalize(), projected);
     }
 
     #[test]
@@ -321,7 +303,7 @@ mod test {
         let floor_tri = Tri::new(
             Vec3::new(-1.0, 0.0, 1.0),
             Vec3::new(1.0, 0.0, 1.0),
-            Vec3::new(0.0, 0.0, -1.0)
+            Vec3::new(0.0, 0.0, -1.0),
         );
 
         let up = Vec3::new(0.0, 1.0, 0.0).normalize();

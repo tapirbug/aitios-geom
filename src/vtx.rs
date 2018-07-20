@@ -1,4 +1,6 @@
-use ::linalg::{Vec2, Vec3};
+//! Owned vertex type and vertex accessor traits.
+
+use linalg::{Vec2, Vec3};
 use std::ops::{Add, Mul};
 
 pub trait Position {

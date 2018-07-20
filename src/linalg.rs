@@ -1,3 +1,6 @@
+//! Exposes the public interface of `cgmath` as well as some shorthands
+//! for commonly used `cgmath` types.
+
 pub use cgmath::*;
 
 pub type Vec2 = Vector2<f32>;

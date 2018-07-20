@@ -1,14 +1,16 @@
+//! Defines a type for axis-aligned bounding boxes in 3D.
+
+use intersect::IntersectRay;
+use linalg::Vec3;
+use std::borrow::Borrow;
 use std::f32::{INFINITY, NEG_INFINITY};
 use std::iter::FromIterator;
-use std::borrow::Borrow;
-use linalg::Vec3;
-use intersect::IntersectRay;
 
 /// An axis-aligned bounding box in 3D
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Aabb {
     pub min: Vec3,
-    pub max: Vec3
+    pub max: Vec3,
 }
 
 impl Aabb {
@@ -37,27 +39,17 @@ impl Aabb {
     /// let aabb = Aabb::from_points(vec![Box::new(p1), Box::new(p2), Box::new(p3)]);
     /// ```
     pub fn from_points<I, P>(iter: I) -> Self
-        where I : IntoIterator<Item=P>,
-            P : Borrow<Vec3>
+    where
+        I: IntoIterator<Item = P>,
+        P: Borrow<Vec3>,
     {
         iter.into_iter()
-            .fold(
-                Aabb::empty(),
-                |Aabb { min, max }, p| {
-                    let &Vec3 { x, y, z} = p.borrow();
-                    let min = Vec3::new(
-                        min.x.min(x),
-                        min.y.min(y),
-                        min.z.min(z)
-                    );
-                    let max = Vec3::new(
-                        max.x.max(x),
-                        max.y.max(y),
-                        max.z.max(z)
-                    );
-                    Aabb { min, max }
-                }
-            )
+            .fold(Aabb::empty(), |Aabb { min, max }, p| {
+                let &Vec3 { x, y, z } = p.borrow();
+                let min = Vec3::new(min.x.min(x), min.y.min(y), min.z.min(z));
+                let max = Vec3::new(max.x.max(x), max.y.max(y), max.z.max(z));
+                Aabb { min, max }
+            })
     }
 
     /// Constructs an AABB that covers no possible point. Its min point
@@ -70,15 +62,13 @@ impl Aabb {
     pub fn empty() -> Self {
         Aabb {
             min: Vec3::new(INFINITY, INFINITY, INFINITY),
-            max: Vec3::new(NEG_INFINITY, NEG_INFINITY, NEG_INFINITY)
+            max: Vec3::new(NEG_INFINITY, NEG_INFINITY, NEG_INFINITY),
         }
     }
 
     /// Checks whether the Aabb is empty, i.e. has a zero volume.
     pub fn is_empty(&self) -> bool {
-        self.min.x >= self.max.x ||
-        self.min.y >= self.max.y ||
-        self.min.z >= self.max.z
+        self.min.x >= self.max.x || self.min.y >= self.max.y || self.min.z >= self.max.z
     }
 
     /// Creates the largest possible AABB with the min point set at negative
@@ -87,7 +77,7 @@ impl Aabb {
     pub fn infinite() -> Self {
         Aabb {
             min: Vec3::new(NEG_INFINITY, NEG_INFINITY, NEG_INFINITY),
-            max: Vec3::new(INFINITY, INFINITY, INFINITY)
+            max: Vec3::new(INFINITY, INFINITY, INFINITY),
         }
     }
 
@@ -98,26 +88,28 @@ impl Aabb {
     /// Returns the smallest aabb that encloses self and the given aabb.
     /// Returns an aabb with max at negative infinity and min at positive infinity if
     /// the given iterator was empty.
-    pub fn union(&self, other: &Self) -> Self
-    {
+    pub fn union(&self, other: &Self) -> Self {
         Aabb {
             min: Vec3::new(
                 self.min.x.min(other.min.x),
                 self.min.y.min(other.min.y),
-                self.min.z.min(other.min.z)
+                self.min.z.min(other.min.z),
             ),
             max: Vec3::new(
                 self.max.x.max(other.max.x),
                 self.max.y.max(other.max.y),
-                self.max.z.max(other.max.z)
-            )
+                self.max.z.max(other.max.z),
+            ),
         }
     }
 
     fn is_point_outside(&self, point: Vec3) -> bool {
-        point.x < self.min.x || point.x > self.max.x ||
-            point.y < self.min.y || point.y > self.max.y ||
-            point.z < self.min.z || point.z > self.max.z
+        point.x < self.min.x
+            || point.x > self.max.x
+            || point.y < self.min.y
+            || point.y > self.max.y
+            || point.z < self.min.z
+            || point.z > self.max.z
     }
 
     pub fn is_point_inside(&self, point: Vec3) -> bool {
@@ -132,7 +124,7 @@ impl Aabb {
         match self.line_intersection_min_max_parameters(ray_origin, ray_direction) {
             // If one is > 0, ray originates inside, if two are > 0 ray intersects from the outside
             Some((min_t, max_t)) => min_t > 0.0 || max_t > 0.0,
-            None => false
+            None => false,
         }
     }
 
@@ -158,23 +150,24 @@ impl Aabb {
     /// If the line does not intersect the aabb, None is returned.
     ///
     /// See: https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
-    fn line_intersection_min_max_parameters(&self, line_origin: Vec3, line_dir: Vec3) -> Option<(f32, f32)> {
+    fn line_intersection_min_max_parameters(
+        &self,
+        line_origin: Vec3,
+        line_dir: Vec3,
+    ) -> Option<(f32, f32)> {
         let line_dir_inv = 1.0 / line_dir;
         let line_sign = [
             if line_dir_inv.x < 0.0 { 1 } else { 0 },
             if line_dir_inv.y < 0.0 { 1 } else { 0 },
-            if line_dir_inv.z < 0.0 { 1 } else { 0 }
+            if line_dir_inv.z < 0.0 { 1 } else { 0 },
         ];
-        let bounds = [
-            self.min,
-            self.max
-        ];
+        let bounds = [self.min, self.max];
 
         let mut tmin = (bounds[line_sign[0]].x - line_origin.x) * line_dir_inv.x;
-        let mut tmax = (bounds[1-line_sign[0]].x - line_origin.x) * line_dir_inv.x;
+        let mut tmax = (bounds[1 - line_sign[0]].x - line_origin.x) * line_dir_inv.x;
 
         let tymin = (bounds[line_sign[1]].y - line_origin.y) * line_dir_inv.y;
-        let tymax = (bounds[1-line_sign[1]].y - line_origin.y) * line_dir_inv.y;
+        let tymax = (bounds[1 - line_sign[1]].y - line_origin.y) * line_dir_inv.y;
 
         if (tmin > tymax) || (tymin > tmax) {
             return None;
@@ -187,7 +180,7 @@ impl Aabb {
         }
 
         let tzmin = (bounds[line_sign[2]].z - line_origin.z) * line_dir_inv.z;
-        let tzmax = (bounds[1-line_sign[2]].z - line_origin.z) * line_dir_inv.z;
+        let tzmax = (bounds[1 - line_sign[2]].z - line_origin.z) * line_dir_inv.z;
 
         if (tmin > tzmax) || (tzmin > tmax) {
             return None;
@@ -206,16 +199,15 @@ impl Aabb {
 /// When created from an iterator over owned or borrowed Aabb, return the smallest possible Aabb
 /// encompassing all the given Aabb.
 impl<T> FromIterator<T> for Aabb
-    where T : Borrow<Aabb>
+where
+    T: Borrow<Aabb>,
 {
     fn from_iter<I>(iter: I) -> Self
-        where I : IntoIterator<Item=T>
+    where
+        I: IntoIterator<Item = T>,
     {
         iter.into_iter()
-            .fold(
-                Aabb::empty(),
-                |acc, a| acc.union(a.borrow())
-            )
+            .fold(Aabb::empty(), |acc, a| acc.union(a.borrow()))
     }
 }
 
@@ -272,7 +264,9 @@ impl IntersectRay for Aabb {
     /// Finds the closest value for t in the ray equation ray(t) = ray_origin + t * ray_direction
     /// for the called object or None if no intersection
     fn ray_intersection_parameter(&self, ray_origin: Vec3, ray_direction: Vec3) -> Option<f32> {
-        if let Some((tmin, tmax)) = self.line_intersection_min_max_parameters(ray_origin, ray_direction) {
+        if let Some((tmin, tmax)) =
+            self.line_intersection_min_max_parameters(ray_origin, ray_direction)
+        {
             if tmin >= 0.0 {
                 Some(tmin)
             } else if tmax >= 0.0 {
@@ -292,8 +286,8 @@ impl IntersectRay for Aabb {
 mod test {
 
     use super::*;
+    use std::f32::{MAX as HIGHEST, MIN as LOWEST};
     use std::iter;
-    use std::f32::{MIN as LOWEST, MAX as HIGHEST};
 
     #[test]
     fn empty() {
@@ -313,13 +307,22 @@ mod test {
         assert!(empty.is_empty());
         assert_eq!(empty.volume(), 0.0);
 
-        let empty_on_y_axis = Aabb { min: Vec3::new(1.0, 1.0, 1.0), max: Vec3::new(10.0, 1.0, 100.0) };
+        let empty_on_y_axis = Aabb {
+            min: Vec3::new(1.0, 1.0, 1.0),
+            max: Vec3::new(10.0, 1.0, 100.0),
+        };
         assert!(empty_on_y_axis.is_empty());
 
-        let empty_same_point = Aabb { min: Vec3::new(1.0, 1.0, 1.0), max: Vec3::new(1.0, 1.0, 1.0) };
+        let empty_same_point = Aabb {
+            min: Vec3::new(1.0, 1.0, 1.0),
+            max: Vec3::new(1.0, 1.0, 1.0),
+        };
         assert!(empty_same_point.is_empty());
 
-        let normal_aabb = Aabb { min: Vec3::new(0.0, 0.0, 0.0), max: Vec3::new(1.0, 1.0, 1.0) };
+        let normal_aabb = Aabb {
+            min: Vec3::new(0.0, 0.0, 0.0),
+            max: Vec3::new(1.0, 1.0, 1.0),
+        };
         assert_eq!(empty.union(&normal_aabb), normal_aabb);
     }
 
@@ -341,7 +344,10 @@ mod test {
         assert!(infinite.is_infinite());
         assert_eq!(infinite.volume(), INFINITY);
 
-        let normal_aabb = Aabb { min: Vec3::new(0.0, 0.0, 0.0), max: Vec3::new(1.0, 1.0, 1.0) };
+        let normal_aabb = Aabb {
+            min: Vec3::new(0.0, 0.0, 0.0),
+            max: Vec3::new(1.0, 1.0, 1.0),
+        };
         assert_eq!(infinite.union(&normal_aabb), infinite);
     }
 
@@ -355,7 +361,7 @@ mod test {
             Aabb {
                 min: Vec3::new(1.0, 1.0, 1.0),
                 max: Vec3::new(100.0, 100.0, 100.0),
-            }
+            },
         ];
 
         let expected_combined = Aabb {
@@ -364,12 +370,11 @@ mod test {
         };
 
         // first, create from iterator over references
-        let combined_from_refs : Aabb = aabbs.iter()
-            .collect();
+        let combined_from_refs: Aabb = aabbs.iter().collect();
 
         assert_eq!(expected_combined, combined_from_refs);
 
-        let combined_from_owned : Aabb = aabbs.into_iter()
+        let combined_from_owned: Aabb = aabbs.into_iter()
             .map(|aabb : Aabb| aabb) // this wouldn't compile unless we are really dealing with owned values
             .collect();
 
@@ -385,11 +390,10 @@ mod test {
                 min: Vec3::new(1.0, 1.0, 1.0),
                 max: Vec3::new(100.0, 100.0, 100.0),
             },
-            Aabb::empty()
+            Aabb::empty(),
         ];
         // first, create from iterator over references
-        let combined : Aabb = aabbs.iter()
-            .collect();
+        let combined: Aabb = aabbs.iter().collect();
 
         assert_eq!(expected_combined, combined);
 
@@ -397,8 +401,7 @@ mod test {
         aabbs.push(Aabb::infinite());
         let expected_combined = Aabb::infinite();
 
-        let combined : Aabb = aabbs.iter()
-            .collect();
+        let combined: Aabb = aabbs.iter().collect();
 
         assert_eq!(expected_combined, combined);
     }
@@ -417,8 +420,16 @@ mod test {
         let point = Vec3::new(1.0, 2.0, 3.0);
         let aabb = Aabb::from_points(iter::once(point));
 
-        assert_eq!(aabb.min, point, "Built AABB from single point {:?} and expected min to be equal, but was {:?}", point, aabb.min);
-        assert_eq!(aabb.max, point, "Built AABB from single point {:?} and expected max to be equal, but was {:?}", point, aabb.max);
+        assert_eq!(
+            aabb.min, point,
+            "Built AABB from single point {:?} and expected min to be equal, but was {:?}",
+            point, aabb.min
+        );
+        assert_eq!(
+            aabb.max, point,
+            "Built AABB from single point {:?} and expected max to be equal, but was {:?}",
+            point, aabb.max
+        );
         assert!(aabb.is_empty());
     }
 
@@ -427,7 +438,7 @@ mod test {
         let aabb = Aabb::from_points(vec![
             Vec3::new(-0.5, -0.5, 1.0),
             Vec3::new(0.5, -0.5, 1.0),
-            Vec3::new(0.0, 0.5, -1.0)
+            Vec3::new(0.0, 0.5, -1.0),
         ]);
 
         assert_eq!(aabb.min, Vec3::new(-0.5, -0.5, -1.0));
@@ -457,15 +468,15 @@ mod test {
         // x = -10, y = -10, z = 10 is positive
         let one_dimension_min_gt_max = Aabb {
             min: Vec3::new(1.1, 0.0, 0.0),
-            max: Vec3::new(1.0, 1.0, 1.0)
+            max: Vec3::new(1.0, 1.0, 1.0),
         };
         let two_dimension_min_gt_max = Aabb {
             min: Vec3::new(1.1, 1.1, 0.0),
-            max: Vec3::new(1.0, 1.0, 1.0)
+            max: Vec3::new(1.0, 1.0, 1.0),
         };
         let three_dimension_min_gt_max = Aabb {
             min: Vec3::new(1.1, 1.1, 1.1),
-            max: Vec3::new(1.0, 1.0, 1.0)
+            max: Vec3::new(1.0, 1.0, 1.0),
         };
 
         assert_eq!(empty.volume(), 0.0);
@@ -479,7 +490,7 @@ mod test {
         let aabb = Aabb::from_points(vec![
             Vec3::new(-0.5, -0.5, 1.0),
             Vec3::new(0.5, -0.5, 1.0),
-            Vec3::new(0.0, 0.5, -1.0)
+            Vec3::new(0.0, 0.5, -1.0),
         ]);
 
         let point = Vec3::new(0.0, 0.0, 0.0);
@@ -524,21 +535,26 @@ mod test {
         let aabb = Aabb::from_points(vec![
             Vec3::new(-0.5, -0.5, 1.0),
             Vec3::new(0.5, -0.5, 1.0),
-            Vec3::new(0.0, 0.5, -1.0)
+            Vec3::new(0.0, 0.5, -1.0),
         ]);
 
         // Line above the origin, with direction facing up, hit
         let line_origin = Vec3::new(0.0, 10.0, 0.0);
         let line_direction = Vec3::new(0.0, -1.0, 0.0);
-        let intersection_params = aabb.line_intersection_min_max_parameters(line_origin, line_direction);
-        assert!(intersection_params.is_some(), "Line above the origin, with direction facing up, should hit an aabb below");
+        let intersection_params =
+            aabb.line_intersection_min_max_parameters(line_origin, line_direction);
+        assert!(
+            intersection_params.is_some(),
+            "Line above the origin, with direction facing up, should hit an aabb below"
+        );
         let (min_t, max_t) = intersection_params.unwrap();
         assert!(min_t > 0.0 && max_t > 0.0 && max_t > min_t);
 
         // Line above the origin, with direction facing down should also hit an aabb below, this is not a ray
         let line_origin = Vec3::new(0.0, 10.0, 0.0);
         let line_direction = Vec3::new(0.0, 1.0, 0.0);
-        let intersection_params = aabb.line_intersection_min_max_parameters(line_origin, line_direction);
+        let intersection_params =
+            aabb.line_intersection_min_max_parameters(line_origin, line_direction);
         assert!(intersection_params.is_some(), "Line above the origin, with direction facing down should also hit an aabb below, this is not a ray");
         let (min_t, max_t) = intersection_params.unwrap();
         assert!(min_t < 0.0 && max_t < 0.0 && max_t > min_t);
@@ -546,60 +562,73 @@ mod test {
         // Line above the origin, facing right, should miss
         let line_origin = Vec3::new(0.0, 10.0, 0.0);
         let line_direction = Vec3::new(1.0, 0.0, 0.0);
-        let intersection_params = aabb.line_intersection_min_max_parameters(line_origin, line_direction);
-        assert!(intersection_params.is_none(), "Line above the origin, facing right, should miss");
+        let intersection_params =
+            aabb.line_intersection_min_max_parameters(line_origin, line_direction);
+        assert!(
+            intersection_params.is_none(),
+            "Line above the origin, facing right, should miss"
+        );
 
         // Line above the origin, facing towards Z, should miss
         let line_origin = Vec3::new(0.0, 10.0, 0.0);
         let line_direction = Vec3::new(0.0, 0.0, 1.0);
-        let intersection_params = aabb.line_intersection_min_max_parameters(line_origin, line_direction);
-        assert!(intersection_params.is_none(), "Line above the origin, facing right, should miss");
-
+        let intersection_params =
+            aabb.line_intersection_min_max_parameters(line_origin, line_direction);
+        assert!(
+            intersection_params.is_none(),
+            "Line above the origin, facing right, should miss"
+        );
     }
 
     #[test]
     fn aabb_intersects_ray_inside() {
         // Given one aabb around the origin
-        let aabb = Aabb::from_points(vec![
-            Vec3::new(-0.5, -0.5, -1.0),
-            Vec3::new(0.5, 0.5, 1.0)
-        ]);
+        let aabb = Aabb::from_points(vec![Vec3::new(-0.5, -0.5, -1.0), Vec3::new(0.5, 0.5, 1.0)]);
 
         let ray_origin = Vec3::new(0.0, 0.0, 0.0);
         let ray_direction = Vec3::new(1.0, 1.0, 0.0);
         assert!(aabb.is_point_inside(ray_origin));
-        assert!(aabb.intersects_ray(ray_origin, ray_direction), "No matter the direction, a ray originating inside an aabb should always hit it");
+        assert!(
+            aabb.intersects_ray(ray_origin, ray_direction),
+            "No matter the direction, a ray originating inside an aabb should always hit it"
+        );
         let ray_direction = Vec3::new(-1.0, 0.0, 1.0);
         assert!(aabb.is_point_inside(ray_origin));
-        assert!(aabb.intersects_ray(ray_origin, ray_direction), "No matter the direction, a ray originating inside an aabb should always hit it");
+        assert!(
+            aabb.intersects_ray(ray_origin, ray_direction),
+            "No matter the direction, a ray originating inside an aabb should always hit it"
+        );
         let ray_direction = Vec3::new(0.0, 1.0, 1.0);
         assert!(aabb.is_point_inside(ray_origin));
-        assert!(aabb.intersects_ray(ray_origin, ray_direction), "No matter the direction, a ray originating inside an aabb should always hit it");
+        assert!(
+            aabb.intersects_ray(ray_origin, ray_direction),
+            "No matter the direction, a ray originating inside an aabb should always hit it"
+        );
     }
 
     #[test]
     fn aabb_intersects_ray_hit_from_outside() {
         // Given one aabb around the origin
-        let aabb = Aabb::from_points(vec![
-            Vec3::new(-0.5, -0.5, -1.0),
-            Vec3::new(0.5, 0.5, 1.0)
-        ]);
+        let aabb = Aabb::from_points(vec![Vec3::new(-0.5, -0.5, -1.0), Vec3::new(0.5, 0.5, 1.0)]);
 
         let ray_origin = Vec3::new(10.0, 0.0, 0.0);
         let ray_direction = Vec3::new(-1.0, 0.0, 0.0);
-        assert!(aabb.intersects_ray(ray_origin, ray_direction), "Ray shot from the right to an abb on the left should hit");
+        assert!(
+            aabb.intersects_ray(ray_origin, ray_direction),
+            "Ray shot from the right to an abb on the left should hit"
+        );
     }
 
     #[test]
     fn aabb_intersects_miss() {
         // Given one aabb around the origin
-        let aabb = Aabb::from_points(vec![
-            Vec3::new(-0.5, -0.5, -1.0),
-            Vec3::new(0.5, 0.5, 1.0)
-        ]);
+        let aabb = Aabb::from_points(vec![Vec3::new(-0.5, -0.5, -1.0), Vec3::new(0.5, 0.5, 1.0)]);
 
         let ray_origin = Vec3::new(10.0, 0.0, 0.0);
         let ray_direction = Vec3::new(1.0, 0.0, 0.0);
-        assert!(!aabb.intersects_ray(ray_origin, ray_direction), "Ray shot from the right to the right should miss an aabb on the left");
+        assert!(
+            !aabb.intersects_ray(ray_origin, ray_direction),
+            "Ray shot from the right to the right should miss an aabb on the left"
+        );
     }
 }

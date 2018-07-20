@@ -1,11 +1,10 @@
-use ::intersect::IntersectRay;
 use super::Triangle;
-use ::linalg::Vec3;
-use ::cgmath::prelude::*;
+use cgmath::prelude::*;
+use intersect::IntersectRay;
+use linalg::Vec3;
 
 /// Implements the moller trombore ray-triangle-intersection algorithm
-impl<T : Triangle> IntersectRay for T
-{
+impl<T: Triangle> IntersectRay for T {
     fn ray_intersection_parameter(&self, ray_origin: Vec3, ray_direction: Vec3) -> Option<f32> {
         let (vertex0, vertex1, vertex2) = self.positions();
 
@@ -49,8 +48,8 @@ impl<T : Triangle> IntersectRay for T
 #[cfg(test)]
 mod test {
     use super::*;
-    use ::tri::TupleTriangle as Tri;
-    use ::tri::FromVertices;
+    use tri::FromVertices;
+    use tri::TupleTriangle as Tri;
 
     #[test]
     fn intersect_ray_with_tri() {
@@ -63,8 +62,15 @@ mod test {
 
         let tri = Tri::new(vertex0, vertex1, vertex2);
 
-        assert!(tri.ray_intersection_parameter(ray_origin, ray_direction).unwrap() > 0.0);
-        assert_ulps_eq!(tri.ray_intersection_point(ray_origin, ray_direction).unwrap(), Vec3::new(0.0, 0.0, 150.0));
+        assert!(
+            tri.ray_intersection_parameter(ray_origin, ray_direction)
+                .unwrap() > 0.0
+        );
+        assert_ulps_eq!(
+            tri.ray_intersection_point(ray_origin, ray_direction)
+                .unwrap(),
+            Vec3::new(0.0, 0.0, 150.0)
+        );
     }
 
     #[test]
@@ -78,7 +84,10 @@ mod test {
 
         let tri = Tri::new(vertex0, vertex1, vertex2);
 
-        assert_eq!(tri.ray_intersection_parameter(ray_origin, ray_direction), None);
+        assert_eq!(
+            tri.ray_intersection_parameter(ray_origin, ray_direction),
+            None
+        );
         assert_eq!(tri.ray_intersection_point(ray_origin, ray_direction), None);
     }
 }

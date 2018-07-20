@@ -1,15 +1,15 @@
 use super::iter::Iter;
 
-use linalg::{Vec3, Vec2};
-use vtx::{Position, Normal, Texcoords};
 use cgmath::prelude::*;
+use linalg::{Vec2, Vec3};
 use std::f32::EPSILON;
+use vtx::{Normal, Position, Texcoords};
 
 /// Represents a triangle in three-dimensional space.
 ///
 /// Its individual vertices can be obtained with the required
 /// `vertices` method, which is the only method required for implementors.
-/// As a minimum, returned vertices are expected to implement [`Position`](../vtx/trait.Position.html).
+/// At a minimum, returned vertices are expected to implement [`Position`](../vtx/trait.Position.html).
 ///
 /// If a custom implementation is not desired, *aitios_geom* provides the [`TupleTriangle`](struct.TupleTriangle.html)
 /// type for a triangle consisting of three vertices of the same type.
@@ -18,7 +18,6 @@ use std::f32::EPSILON;
 /// For further functionality, the trait can be used as a bound for templated functions.
 ///
 /// # Examples
-///
 /// For basic usage, have a look at calculating the area of a `TupleTriangle<Vec3>`:
 /// ```
 /// # #[macro_use]
@@ -62,7 +61,7 @@ use std::f32::EPSILON;
 ///
 /// /// Calculates the circumference of any triangle.
 /// fn circumference<T>(triangle: &T) -> f32
-///     where T : Triangle
+///     where T: Triangle
 /// {
 ///     let (v0, v1, v2) = triangle.positions();
 ///     let (a, b, c) = (
@@ -89,7 +88,7 @@ use std::f32::EPSILON;
 /// # }
 /// ```
 pub trait Triangle {
-    type Vertex : Position;
+    type Vertex: Position;
 
     fn vertices(&self) -> (&Self::Vertex, &Self::Vertex, &Self::Vertex);
 
@@ -107,7 +106,8 @@ pub trait Triangle {
 
     #[inline]
     fn normals(&self) -> (Vec3, Vec3, Vec3)
-        where Self::Vertex : Normal
+    where
+        Self::Vertex: Normal,
     {
         let (a, b, c) = self.vertices();
         (a.normal(), b.normal(), c.normal())
@@ -115,7 +115,8 @@ pub trait Triangle {
 
     #[inline]
     fn texcoords(&self) -> (Vec2, Vec2, Vec2)
-        where Self::Vertex : Texcoords
+    where
+        Self::Vertex: Texcoords,
     {
         let (a, b, c) = self.vertices();
         (a.texcoords(), b.texcoords(), c.texcoords())
@@ -127,7 +128,7 @@ pub trait Triangle {
         (b - a).cross(c - a).is_zero()
     }
 
-    /// ||(V1 −V0)×(V2 −V0)||/2
+    /// Obtain the area of the triangle with ||(V1 −V0)×(V2 −V0)||/2
     fn area(&self) -> f32 {
         let (v0, v1, v2) = self.positions();
 
@@ -135,12 +136,10 @@ pub trait Triangle {
     }
 
     fn centroid(&self) -> Vec3 {
-        let one_over_three =  1.0 / 3.0;
+        let one_over_three = 1.0 / 3.0;
         let (a, b, c) = self.positions();
 
-        one_over_three * a +
-        one_over_three * b +
-        one_over_three * c
+        one_over_three * a + one_over_three * b + one_over_three * c
     }
 
     /// Gets the center of a sphere that runs through all of the three
@@ -153,20 +152,23 @@ pub trait Triangle {
         let ab_cross_ac = ab.cross(ac);
 
         // this is the vector from a vertex A to the circumsphere center
-        let to_circumsphere_center = (ab_cross_ac.cross(ab) * ac.magnitude2() + ac.cross(ab_cross_ac) * ab.magnitude2()) /
-            (2.0 * ab_cross_ac.magnitude2());
+        let to_circumsphere_center = (ab_cross_ac.cross(ab) * ac.magnitude2()
+            + ac.cross(ab_cross_ac) * ab.magnitude2())
+            / (2.0 * ab_cross_ac.magnitude2());
 
-        a +  to_circumsphere_center
+        a + to_circumsphere_center
     }
 
     /// Checks if the triangle is completely inside the given sphere
     fn is_inside_sphere(&self, center: Vec3, radius: f32) -> bool {
         let (a, b, c) = self.vertices();
         let radius_sqr = radius * radius;
-        [a, b, c].iter()
+        [a, b, c]
+            .iter()
             .all(|v| center.distance2(v.position()) < radius_sqr)
     }
 
+    /// Iterates over the three vertices of this triangle.
     fn iter(&self) -> Iter<Self> {
         Iter::new(self)
     }
@@ -187,12 +189,12 @@ pub trait Triangle {
             let min = Vec3::new(
                 a.x.min(b.x).min(c.x),
                 a.y.min(b.y).min(c.y),
-                a.z.min(b.z).min(c.z)
+                a.z.min(b.z).min(c.z),
             );
             let max = Vec3::new(
                 a.x.max(b.x).max(c.x),
                 a.y.max(b.y).max(c.y),
-                a.z.max(b.z).max(c.z)
+                a.z.max(b.z).max(c.z),
             );
 
             // a, b, and c lie on a line. Circle center is center of AABB of the
@@ -211,7 +213,7 @@ pub trait Triangle {
                 reference_point = b;
                 0.5 * (b + c)
             } else {
-                a + s*(b - a) + t*(c - a)
+                a + s * (b - a) + t * (c - a)
             }
         };
 
@@ -221,27 +223,27 @@ pub trait Triangle {
     }
 }
 
-pub trait FromVertices : Triangle {
-    fn new(v0: Self::Vertex, v1: Self::Vertex, v2: Self::Vertex) -> Self;
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
-    use ::tri::TupleTriangle;
+    use tri::TupleTriangle;
 
     #[test]
     fn test_centroid() {
-        let tri = TupleTriangle::new(Vec3::new(-10.0, 0.0, 0.0), Vec3::new(10.0, 0.0, 0.0), Vec3::new(0.0, 10.0, 0.0));
-        assert_ulps_eq!(Vec3::new(0.0, 10.0/3.0, 0.0),  tri.centroid());
+        let tri = TupleTriangle(
+            Vec3::new(-10.0, 0.0, 0.0),
+            Vec3::new(10.0, 0.0, 0.0),
+            Vec3::new(0.0, 10.0, 0.0),
+        );
+        assert_ulps_eq!(Vec3::new(0.0, 10.0 / 3.0, 0.0), tri.centroid());
     }
 
     #[test]
     fn test_circumcenter() {
-        let tri = TupleTriangle::new(
+        let tri = TupleTriangle(
             Vec3::new(3.0, 2.0, 0.0),
             Vec3::new(1.0, 4.0, 0.0),
-            Vec3::new(5.0, 4.0, 0.0)
+            Vec3::new(5.0, 4.0, 0.0),
         );
         let circumcenter = tri.circumcenter();
 
@@ -250,7 +252,11 @@ mod test {
 
     #[test]
     fn test_is_inside_sphere() {
-        let tri = TupleTriangle::new(Vec3::new(-10.0, 0.0, 0.0), Vec3::new(10.0, 0.0, 0.0), Vec3::new(0.0, 10.0, 0.0));
+        let tri = TupleTriangle(
+            Vec3::new(-10.0, 0.0, 0.0),
+            Vec3::new(10.0, 0.0, 0.0),
+            Vec3::new(0.0, 10.0, 0.0),
+        );
 
         assert!(tri.is_inside_sphere(Vec3::zero(), 10.000001));
         assert!(!tri.is_inside_sphere(Vec3::zero(), 0.0));
@@ -259,14 +265,22 @@ mod test {
 
     #[test]
     fn test_area() {
-        let tri = TupleTriangle::new(Vec3::new(0.0, 0.0, 0.0), Vec3::new(10.0, 0.0, 0.0), Vec3::new(10.0, 10.0, 0.0));
+        let tri = TupleTriangle(
+            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(10.0, 0.0, 0.0),
+            Vec3::new(10.0, 10.0, 0.0),
+        );
         let area = tri.area();
         assert_eq!(50.0, area);
     }
 
     #[test]
     fn test_area_colinear() {
-        let tri = TupleTriangle::new(Vec3::new(0.0, 0.0, 0.0), Vec3::new(10.0, 0.0, 0.0), Vec3::new(100.0, 0.0, 0.0));
+        let tri = TupleTriangle(
+            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(10.0, 0.0, 0.0),
+            Vec3::new(100.0, 0.0, 0.0),
+        );
         let area = tri.area();
         assert_eq!(0.0, area);
     }
@@ -276,7 +290,7 @@ mod test {
         let vertex0 = Vec3::new(-1.0, -1.0, 0.0);
         let vertex1 = Vec3::new(1.0, -1.0, 0.0);
         let vertex2 = Vec3::new(0.0, 1.0, 0.0);
-        let tri = TupleTriangle::new(vertex0, vertex1, vertex2);
+        let tri = TupleTriangle(vertex0, vertex1, vertex2);
 
         let mut iter = tri.iter();
         assert_eq!(vertex0, *iter.next().unwrap());
@@ -290,7 +304,7 @@ mod test {
         let vertex0 = origin_offset + Vec3::new(3.0, -4.0, 0.0);
         let vertex1 = origin_offset + Vec3::new(3.0, -4.0, 0.0);
         let vertex2 = origin_offset - Vec3::new(3.0, -4.0, 0.0);
-        let tri = TupleTriangle::new(vertex0, vertex1, vertex2);
+        let tri = TupleTriangle(vertex0, vertex1, vertex2);
         let (center, radius_sqr) = tri.minimum_bounding_sphere_sqr();
         assert_ulps_eq!(radius_sqr, 25.0);
         assert_ulps_eq!(origin_offset, center);
@@ -301,8 +315,11 @@ mod test {
         let vertex0 = Vec3::new(1.0, -4.0, 0.0);
         let vertex1 = Vec3::new(2.0, -4.0, 0.0);
         let vertex2 = Vec3::new(3.0, -4.0, 0.0);
-        let tri = TupleTriangle::new(vertex0, vertex1, vertex2);
-        assert!(tri.is_colinear(), "All three points lie on the same line but reported as not colinear.");
+        let tri = TupleTriangle(vertex0, vertex1, vertex2);
+        assert!(
+            tri.is_colinear(),
+            "All three points lie on the same line but reported as not colinear."
+        );
     }
 
     /// Tests for colinearity with a triangle that is almost but not
@@ -313,10 +330,13 @@ mod test {
     /// http://www.wolframalpha.com/input/?i=Triangle+a%3D(1687.763,+928.7209)+b%3D(1687.7466,+928.7045)+c%3D(1687.7527,+928.71063)
     #[test]
     fn test_colinearity_edge_case() {
-        let vertex0 = Vec3::new(1687.763,  928.7209,  0.0);
-        let vertex1 = Vec3::new(1687.7466, 928.7045,  0.0);
+        let vertex0 = Vec3::new(1687.763, 928.7209, 0.0);
+        let vertex1 = Vec3::new(1687.7466, 928.7045, 0.0);
         let vertex2 = Vec3::new(1687.7527, 928.71063, 0.0);
-        let tri = TupleTriangle::new(vertex0, vertex1, vertex2);
-        assert!(tri.is_colinear(), "Almost colinear triangle should also report as colinear.");
+        let tri = TupleTriangle(vertex0, vertex1, vertex2);
+        assert!(
+            tri.is_colinear(),
+            "Almost colinear triangle should also report as colinear."
+        );
     }
 }
